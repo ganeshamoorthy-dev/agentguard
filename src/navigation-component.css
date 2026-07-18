@@ -1,0 +1,9 @@
+.child-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between
+}
+
+.child-nav-item svg {
+    opacity: .8
+}

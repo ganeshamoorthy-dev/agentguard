@@ -1,0 +1,1 @@
+Entry point for investigations. Contains overview and navigation to traces.

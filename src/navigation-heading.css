@@ -1,0 +1,11 @@
+.child-heading {
+    padding-bottom: 8px
+}
+
+.child-heading strong {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: #70869f;
+    font-weight: 600
+}

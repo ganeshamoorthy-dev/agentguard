@@ -1,0 +1,61 @@
+.sidebar {
+    background: #0b1220;
+    border-right-color: #1e334f;
+    box-shadow: 3px 0 16px #0b12200d
+}
+
+.project-switch {
+    color: #f2f7fb
+}
+
+.project-switch:hover {
+    background: #16243a
+}
+
+.project-icon {
+    background: #14b8a6;
+    color: #063e3b
+}
+
+.project-switch span {
+    color: #91a5bd
+}
+
+.nav-label {
+    color: #607792
+}
+
+.nav-item {
+    color: #afbed0
+}
+
+.nav-item:hover {
+    background: #16243a;
+    color: #fff
+}
+
+.nav-item.active {
+    background: #124d59;
+    color: #5de0d3;
+    box-shadow: inset 3px 0 #14b8a6
+}
+
+.nav-item b {
+    background: #5d2734;
+    color: #ffb2bd
+}
+
+.upgrade {
+    background: linear-gradient(135deg, #132d48, #143847);
+    border: 1px solid #215069;
+    color: #d5edf0
+}
+
+.upgrade-icon {
+    background: #1b6d70;
+    color: #8af2e8
+}
+
+.upgrade span {
+    color: #9cbbca
+}

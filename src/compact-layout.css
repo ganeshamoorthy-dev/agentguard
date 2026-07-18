@@ -1,0 +1,57 @@
+.project-switch,
+.nav-bottom,
+.avatar,
+.top-actions>svg {
+    display: none
+}
+
+.sidebar {
+    padding-top: 13px;
+    width: 224px
+}
+
+.nav-label {
+    padding-bottom: 4px
+}
+
+.nav-item {
+    height: 35px;
+    margin: 1px 0
+}
+
+.child-navigation {
+    margin-top: 10px;
+    padding-top: 11px
+}
+
+.child-heading {
+    padding-bottom: 5px
+}
+
+.child-nav-item {
+    height: 31px;
+    margin: 1px 0
+}
+
+.context-nav {
+    display: none
+}
+
+main {
+    margin-left: 224px;
+    padding: 22px 28px 32px
+}
+
+.page-head {
+    margin-bottom: 18px
+}
+
+.metrics-grid {
+    gap: 12px;
+    margin-bottom: 12px
+}
+
+.dashboard-grid {
+    gap: 12px;
+    margin-bottom: 12px
+}
