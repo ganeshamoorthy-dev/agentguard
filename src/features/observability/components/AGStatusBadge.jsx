@@ -4,7 +4,10 @@ import { CheckCircle2, AlertCircle, XCircle, ShieldAlert, Eye, FileSignature, Lo
 
 const STATUS_CONFIG = {
   Healthy: { color: '#10b981', bgcolor: '#ecfdf5', icon: CheckCircle2 },
+  Passed: { color: '#10b981', bgcolor: '#ecfdf5', icon: CheckCircle2 },
+  Success: { color: '#10b981', bgcolor: '#ecfdf5', icon: CheckCircle2 },
   Warning: { color: '#f59e0b', bgcolor: '#fffbeb', icon: AlertCircle },
+  Review: { color: '#f59e0b', bgcolor: '#fffbeb', icon: Eye },
   Failed: { color: '#ef4444', bgcolor: '#fef2f2', icon: XCircle },
   Blocked: { color: '#8b5cf6', bgcolor: '#f5f3ff', icon: ShieldAlert },
   Evaluated: { color: '#3b82f6', bgcolor: '#eff6ff', icon: CheckCircle2 },
@@ -26,10 +29,10 @@ export default function AGStatusBadge({ status }) {
         px: 1, 
         py: 0.25, 
         borderRadius: 1, 
-        bgcolor: config.bgcolor, 
+        bgcolor: 'transparent', 
         color: config.color,
         border: '1px solid',
-        borderColor: `${config.color}20` // 20% opacity for border
+        borderColor: config.color
       }}
     >
       <Icon size={12} className={config.spin ? 'spin-animation' : ''} />

@@ -44,7 +44,10 @@ export default function SidebarNavigation({ items, contextNavigation }) {
                 <NavLink 
                   key={page} 
                   to={`/${activeModuleSlug}/${pageSlug}`} 
-                  className={({ isActive }) => `child-nav-item ${isActive ? 'active' : ''}`}
+                  className={({ isActive }) => {
+                    const isTraceExplorerAndDetailsRoute = pageSlug === 'trace-explorer' && pathParts.includes('trace-details');
+                    return `child-nav-item ${isActive || isTraceExplorerAndDetailsRoute ? 'active' : ''}`;
+                  }}
                   style={{ textDecoration: 'none' }}
                 >
                   <span>{page}</span>

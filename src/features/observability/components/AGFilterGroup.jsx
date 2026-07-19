@@ -2,9 +2,16 @@ import React, { useState } from 'react';
 import { Box, Typography, Collapse, IconButton, Checkbox, FormControlLabel, Slider, TextField, Chip } from '@mui/material';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 
-export default function AGFilterGroup({ title, items = [], type = 'checkbox', defaultExpanded = false }) {
+export default function AGFilterGroup({ title, icon: Icon, items = [], type = 'checkbox', defaultExpanded = false, selectedCount = 0, selectedItems = [], onChange, customKey = '', customValue = '', onCustomChange }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [search, setSearch] = useState('');
+
+  const handleAddCustomFilter = () => {
+    if (customKey && customValue && onChange) {
+      onChange(`${title}|${customKey}:${customValue}`, true);
+      if (onCustomChange) onCustomChange('', '');
+    }
+  };
 
   const filteredItems = items.filter(item => item.label.toLowerCase().includes(search.toLowerCase()));
 
@@ -22,10 +29,16 @@ export default function AGFilterGroup({ title, items = [], type = 'checkbox', de
         }}
         onClick={() => setExpanded(!expanded)}
       >
-        <Typography variant="body2" fontWeight={600} color="text.primary">
-          {title}
-        </Typography>
-        <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {Icon && <Icon size={14} color="#64748b" />}
+          <Typography variant="body2" fontWeight={600} color="text.primary">
+            {title}
+          </Typography>
+        </Box>
+        <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
+          {!expanded && selectedCount > 0 && (
+            <Typography variant="caption" color="primary" fontWeight={600}>{selectedCount} selected</Typography>
+          )}
           {expanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </Box>
       </Box>
@@ -55,7 +68,14 @@ export default function AGFilterGroup({ title, items = [], type = 'checkbox', de
               {filteredItems.map(item => (
                 <Box key={item.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <FormControlLabel
-                    control={<Checkbox size="small" sx={{ p: 0.5 }} />}
+                    control={
+                      <Checkbox 
+                        size="small" 
+                        sx={{ p: 0.5 }} 
+                        checked={selectedItems.includes(item.id)}
+                        onChange={(e) => onChange && onChange(item.id, e.target.checked)}
+                      />
+                    }
                     label={<Typography variant="body2" sx={{ fontSize: '12px' }}>{item.label}</Typography>}
                     sx={{ m: 0 }}
                   />
@@ -88,11 +108,34 @@ export default function AGFilterGroup({ title, items = [], type = 'checkbox', de
 
           {type === 'key-value' && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <TextField size="small" placeholder="Key" sx={{ flex: 1, '& .MuiInputBase-root': { height: 28, fontSize: '11px' } }} />
-                <TextField size="small" placeholder="Value" sx={{ flex: 1, '& .MuiInputBase-root': { height: 28, fontSize: '11px' } }} />
+              {selectedItems.filter(id => id.startsWith(`${title}|`)).map(id => {
+                const displayValue = id.replace(`${title}|`, '');
+                return (
+                  <Box key={id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'action.hover', px: 1, py: 0.5, borderRadius: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>{displayValue}</Typography>
+                    <Typography variant="caption" color="error" sx={{cursor:'pointer'}} onClick={() => onChange(id, false)}>Remove</Typography>
+                  </Box>
+                );
+              })}
+              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <TextField 
+                  size="small" 
+                  placeholder="Key" 
+                  value={customKey} 
+                  onChange={e => onCustomChange && onCustomChange(e.target.value, customValue)} 
+                  onKeyDown={e => e.key === 'Enter' && handleAddCustomFilter()}
+                  sx={{ flex: 1, '& .MuiInputBase-root': { height: 28, fontSize: '11px' } }} 
+                />
+                <TextField 
+                  size="small" 
+                  placeholder="Value" 
+                  value={customValue} 
+                  onChange={e => onCustomChange && onCustomChange(customKey, e.target.value)} 
+                  onKeyDown={e => e.key === 'Enter' && handleAddCustomFilter()}
+                  sx={{ flex: 1, '& .MuiInputBase-root': { height: 28, fontSize: '11px' } }} 
+                />
               </Box>
-              <Typography variant="caption" color="primary" sx={{ cursor: 'pointer', mt: 0.5 }}>+ Add filter</Typography>
+              <Typography variant="caption" color="primary" sx={{ cursor: 'pointer', mt: 0.5, fontWeight: 600, display: 'inline-block' }} onClick={handleAddCustomFilter}>+ Add Filter</Typography>
             </Box>
           )}
         </Box>

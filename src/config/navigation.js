@@ -10,7 +10,7 @@ export const workspaceNavigation = [
 
 export const contextNavigation = {
   Overview: [],
-  Observability: ['Overview', 'Trace Explorer', 'Trace Details', 'Sessions', 'Applications', 'Users', 'Models', 'Analytics'],
+  Observability: ['Overview', 'Trace Explorer', 'Sessions', 'Applications', 'Users', 'Models', 'Analytics'],
   Security: ['Overview', 'Guardrails', 'OWASP Top 10', 'Red Teaming', 'Incidents'],
   'AI Quality': ['Overview', 'Scores', 'LLM as a Judge', 'Human Review', 'Datasets', 'Evaluation Runs'],
   Governance: ['Overview', 'Compliance', 'Policy as Code', 'AI BOM', 'Audit Trail'],

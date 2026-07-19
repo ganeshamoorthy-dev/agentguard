@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Typography, Button, IconButton, Divider } from '@mui/material';
-import { PanelLeftClose, Filter, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Box, Typography, Button, IconButton, InputBase } from '@mui/material';
+import { PanelLeftClose, Filter, RotateCcw, Search as SearchIcon, Server, Fingerprint, Box as BoxIcon, Activity, Clock, Shield, CheckCircle, Database } from 'lucide-react';
 import AGFilterGroup from './AGFilterGroup';
 
 const ENV_ITEMS = [
@@ -22,7 +22,99 @@ const STATUS_ITEMS = [
   { id: 'blocked', label: 'Blocked', count: 120 }
 ];
 
-export default function AGFilterPanel({ width = 300, onClose, onApply }) {
+export default function AGFilterPanel({ width = 300, activeFilters = '', onClose, onApply }) {
+  const [filterSearch, setFilterSearch] = useState('');
+  
+  // Parse activeFilters string into IDs to prepopulate
+  const [selectedIds, setSelectedIds] = useState(() => {
+    const ids = [];
+    if (!activeFilters) return ids;
+    const tokens = activeFilters.split(',');
+    tokens.forEach(t => {
+      if (['prod', 'errors', 'latency', 'violations'].includes(t)) ids.push(t);
+      else if (t === 'Environment:Staging') ids.push('staging');
+      else if (t === 'Environment:Production') ids.push('prod');
+      else if (t === 'Model:gpt-4') ids.push('gpt4');
+      else if (t === 'Status:Healthy') ids.push('healthy');
+      else if (t.includes(':')) ids.push(`Metadata|${t}`);
+    });
+    return ids;
+  });
+
+  React.useEffect(() => {
+    const ids = [];
+    if (!activeFilters) {
+      setSelectedIds(ids);
+      return;
+    }
+    const tokens = activeFilters.split(',');
+    tokens.forEach(t => {
+      if (['prod', 'errors', 'latency', 'violations'].includes(t)) ids.push(t);
+      else if (t === 'Environment:Staging') ids.push('staging');
+      else if (t === 'Environment:Production') ids.push('prod');
+      else if (t === 'Model:gpt-4') ids.push('gpt4');
+      else if (t === 'Status:Healthy') ids.push('healthy');
+      else if (t.includes(':')) ids.push(`Metadata|${t}`);
+    });
+    setSelectedIds(ids);
+  }, [activeFilters]);
+
+  const [customInputs, setCustomInputs] = useState({});
+  const [pendingChanges, setPendingChanges] = useState(0);
+
+  const handleCheckboxChange = (id, checked) => {
+    setSelectedIds(prev => {
+      const next = checked ? Array.from(new Set([...prev, id])) : prev.filter(i => i !== id);
+      return next;
+    });
+    setPendingChanges(prev => prev + 1);
+  };
+
+  const handleApply = () => {
+    if (!onApply) return;
+    const outList = selectedIds.map(id => {
+      if (id === 'prod') return 'Environment:Production';
+      if (id === 'staging') return 'Environment:Staging';
+      if (id === 'gpt4') return 'Model:gpt-4';
+      if (id === 'healthy') return 'Status:Healthy';
+      if (id.includes('|')) return id.substring(id.indexOf('|') + 1); 
+      return id; 
+    });
+
+    Object.entries(customInputs).forEach(([title, input]) => {
+      if (input.key && input.value) {
+        outList.push(`${input.key}:${input.value}`);
+      }
+    });
+
+    const out = outList.join(',');
+    onApply(out !== '' ? out : null);
+  };
+
+  const groups = [
+    { title: 'Environment', icon: Server, items: ENV_ITEMS, defaultExpanded: true },
+    { title: 'Identity', icon: Fingerprint, type: 'key-value', items: [] },
+    { title: 'Model', icon: BoxIcon, items: MODEL_ITEMS, defaultExpanded: false },
+    { title: 'Performance (Latency)', icon: Clock, type: 'range', items: [] },
+    { title: 'Performance (Tokens)', icon: Activity, type: 'range', items: [] },
+    { title: 'Security', icon: Shield, items: STATUS_ITEMS, defaultExpanded: false },
+    { title: 'Evaluation', icon: CheckCircle, items: [{id: 'annotated', label: 'Annotated'}, {id: 'pending', label: 'Pending'}] },
+    { title: 'Metadata', icon: Database, type: 'key-value', items: [] },
+  ];
+
+  const filteredGroups = groups.map(g => {
+    if (!filterSearch) return g;
+    const groupMatches = g.title.toLowerCase().includes(filterSearch.toLowerCase());
+    const itemsMatch = g.items.some(i => i.label.toLowerCase().includes(filterSearch.toLowerCase()));
+    if (groupMatches || itemsMatch) {
+      return { ...g, defaultExpanded: true, items: g.items.filter(i => groupMatches || i.label.toLowerCase().includes(filterSearch.toLowerCase())) };
+    }
+    return null;
+  }).filter(Boolean);
+
+  const hasPendingCustomInputs = Object.values(customInputs).some(input => input.key && input.value);
+  const isApplyEnabled = pendingChanges > 0 || hasPendingCustomInputs;
+
   return (
     <Box 
       sx={{ 
@@ -40,7 +132,7 @@ export default function AGFilterPanel({ width = 300, onClose, onApply }) {
       <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: 1, borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Filter size={16} color="#64748b" />
-          <Typography variant="subtitle2" fontWeight={600}>Filters</Typography>
+          <Typography variant="subtitle2" fontWeight={600}>Filters {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}</Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5 }}>
           <IconButton size="small" onClick={() => {}} title="Reset Filters">
@@ -54,21 +146,66 @@ export default function AGFilterPanel({ width = 300, onClose, onApply }) {
         </Box>
       </Box>
 
+      <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', bgcolor: 'background.paper', border: 1, borderColor: 'divider', borderRadius: 1, px: 1, py: 0.5 }}>
+          <SearchIcon size={14} color="#94a3b8" style={{ marginRight: 8 }} />
+          <InputBase 
+            placeholder="Search filters..." 
+            value={filterSearch} 
+            onChange={(e) => setFilterSearch(e.target.value)} 
+            sx={{ fontSize: '13px', flex: 1 }}
+          />
+          {filterSearch && (
+            <IconButton size="small" onClick={() => setFilterSearch('')} sx={{ p: 0.25 }}>
+              <Typography variant="caption" color="text.secondary">&times;</Typography>
+            </IconButton>
+          )}
+        </Box>
+      </Box>
+
       <Box sx={{ flex: 1, overflowY: 'auto' }}>
-        <AGFilterGroup title="Environment" items={ENV_ITEMS} defaultExpanded={true} />
-        <AGFilterGroup title="Identity" type="key-value" />
-        <AGFilterGroup title="Model" items={MODEL_ITEMS} defaultExpanded={true} />
-        <AGFilterGroup title="Performance (Latency)" type="range" />
-        <AGFilterGroup title="Performance (Tokens)" type="range" />
-        <AGFilterGroup title="Security" items={STATUS_ITEMS} defaultExpanded={true} />
-        <AGFilterGroup title="Evaluation" items={[{id: 'annotated', label: 'Annotated'}, {id: 'pending', label: 'Pending'}]} />
-        <AGFilterGroup title="Metadata" type="key-value" />
+        {filteredGroups.length > 0 ? (
+          filteredGroups.map(g => (
+            <AGFilterGroup 
+              key={g.title}
+              title={g.title}
+              icon={g.icon}
+              items={g.items}
+              type={g.type || 'checkbox'}
+              defaultExpanded={g.defaultExpanded}
+              selectedCount={
+                g.type === 'key-value' 
+                  ? selectedIds.filter(id => id.startsWith(`${g.title}|`)).length 
+                  : (g.items ? g.items.filter(i => selectedIds.includes(i.id)).length : 0)
+              }
+              selectedItems={selectedIds}
+              onChange={handleCheckboxChange}
+              customKey={customInputs[g.title]?.key || ''}
+              customValue={customInputs[g.title]?.value || ''}
+              onCustomChange={(k, v) => setCustomInputs(prev => ({...prev, [g.title]: { key: k, value: v }}))}
+            />
+          ))
+        ) : (
+          <Box sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary" gutterBottom>No matching filters found.</Typography>
+            <Button size="small" onClick={() => setFilterSearch('')}>Clear Search</Button>
+          </Box>
+        )}
       </Box>
 
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-        <Button variant="contained" color="primary" fullWidth onClick={onApply}>
-          Apply Filters
-        </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5, alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary">Matching Results</Typography>
+          <Typography variant="body2" fontWeight={600}>12,456 traces</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" color="inherit" fullWidth onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="primary" fullWidth onClick={handleApply} disabled={!isApplyEnabled}>
+            {pendingChanges > 0 || hasPendingCustomInputs ? `Apply (${pendingChanges + (hasPendingCustomInputs ? 1 : 0)})` : 'Apply'}
+          </Button>
+        </Box>
       </Box>
     </Box>
   );

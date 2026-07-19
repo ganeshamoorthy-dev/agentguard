@@ -1,21 +1,24 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Box, Typography, Button, Paper, InputBase, Chip, IconButton, Breadcrumbs, Link, Stack, Skeleton, Drawer, Menu, MenuItem, Checkbox, FormControlLabel } from '@mui/material';
-import { Bookmark, Search, Columns, Download, Share2, TerminalSquare, AlertTriangle, Clock, ShieldAlert, Filter, ListFilter } from 'lucide-react';
+import { Box, Typography, Button, Paper, InputBase, Chip, IconButton, Breadcrumbs, Link, Stack, Skeleton, Drawer, Menu, MenuItem, Checkbox, FormControlLabel, Autocomplete, TextField } from '@mui/material';
+import { Bookmark, Search, Columns, Download, Share2, TerminalSquare, AlertTriangle, Clock, ShieldAlert, Filter, ListFilter, User, Box as BoxIcon, History, Save } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import TraceTable from './TraceTable';
 import AGFilterPanel from './AGFilterPanel';
+import PageHeader from '../../../components/PageHeader';
 
 const QUICK_FILTERS = [
-  { id: 'prod', label: 'Production', icon: TerminalSquare },
-  { id: 'errors', label: 'Errors', icon: AlertTriangle },
-  { id: 'latency', label: 'High Latency', icon: Clock },
-  { id: 'violations', label: 'Guardrail Violations', icon: ShieldAlert },
+  { id: 'prod', category: 'Environment', label: 'Production', icon: TerminalSquare },
+  { id: 'errors', category: 'Status', label: 'Errors', icon: AlertTriangle },
+  { id: 'latency', category: 'Performance', label: 'High Latency', icon: Clock },
+  { id: 'violations', category: 'Security', label: 'Guardrail Violations', icon: ShieldAlert },
 ];
 
 export const ALL_COLUMNS = [
   { id: 'time', label: 'Timestamp' },
   { id: 'application', label: 'Application' },
   { id: 'name', label: 'Trace Name' },
+  { id: 'input', label: 'Input' },
+  { id: 'output', label: 'Output' },
   { id: 'model', label: 'Model' },
   { id: 'latency', label: 'Latency' },
   { id: 'status', label: 'Status' },
@@ -26,11 +29,14 @@ export const ALL_COLUMNS = [
   { id: 'user', label: 'User' }
 ];
 
+const SUGGESTIONS = [];
+
 export default function TraceExplorer({ traces, savedViews, onRefresh, onSelect, onBookmark }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Drawer state
   const [isLoading, setIsLoading] = useState(false);
   const [columnAnchorEl, setColumnAnchorEl] = useState(null);
+  const [searchValue, setSearchValue] = useState('');
   
   // Local state for columns
   const [visibleColumns, setVisibleColumns] = useState(['time', 'application', 'name', 'model', 'latency', 'status']);
@@ -50,7 +56,8 @@ export default function TraceExplorer({ traces, savedViews, onRefresh, onSelect,
     });
   }, [setSearchParams]);
 
-  const handleSearchChange = (e) => updateUrlParams({ q: e.target.value });
+  // Sync internal search value with query param initially
+  useEffect(() => { setSearchValue(query); }, [query]);
 
   const handleColumnToggle = (columnId) => {
     setVisibleColumns(prev => 
@@ -103,107 +110,251 @@ export default function TraceExplorer({ traces, savedViews, onRefresh, onSelect,
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden', margin: '-30px -36px -40px' }}>
       
-      {/* Header (Fixed) */}
-      <Box sx={{ flexShrink: 0, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', px: 3, py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 0.5, '& .MuiBreadcrumbs-separator': { mx: 0.5 } }}>
-            <Link underline="hover" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 500 }} href="#">Observability</Link>
-            <Typography color="text.primary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>Trace Explorer</Typography>
-          </Breadcrumbs>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Typography variant="h6" fontWeight={600} fontFamily="serif" sx={{ lineHeight: 1.2 }}>Trace Explorer</Typography>
-            <Chip size="small" label={`${filteredTraces.length.toLocaleString()} traces`} sx={{ height: 20, fontSize: '10px', bgcolor: 'action.hover' }} />
+      <PageHeader
+        breadcrumbs={['Observability', 'Trace Explorer']}
+        title="Trace Explorer"
+        titleAppend={<Chip size="small" label={`${filteredTraces.length.toLocaleString()} traces`} sx={{ height: 20, fontSize: '10px', bgcolor: 'action.hover' }} />}
+        actions={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Button size="small" variant="outlined" color="inherit" startIcon={<Save size={14} />}>Save View</Button>
+            <Button size="small" variant="outlined" color="inherit" startIcon={<Download size={14} />}>Export</Button>
+            <Button size="small" variant="outlined" color="inherit" startIcon={<Share2 size={14} />}>Share</Button>
           </Box>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Paper variant="outlined" sx={{ display: 'flex', alignItems: 'center', px: 1, py: 0.5, width: 320, boxShadow: 'none', bgcolor: 'background.default' }}>
-            <Search size={16} style={{ color: '#8190a0', marginRight: 8 }} />
-            <InputBase 
-              id="global-trace-search"
-              value={query}
-              onChange={handleSearchChange}
-              placeholder="Search traces, users, tags (Ctrl+K)..." 
-              sx={{ flex: 1, fontSize: '13px' }}
-            />
-          </Paper>
-          <Button size="small" variant="outlined" color="inherit" startIcon={<Download size={14} />}>Export</Button>
-          <Button size="small" variant="outlined" color="inherit" startIcon={<Share2 size={14} />}>Share</Button>
-        </Box>
-      </Box>
+        }
+      />
 
       {/* Main Workspace */}
-      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden', bgcolor: '#f9fafb' }}>
+      <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden', bgcolor: 'background.default' }}>
         
         {/* Table Area */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', p: 4.5 }}>
           
           <Paper variant="outlined" sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-            {/* Quick Filter Chips */}
-            <Box sx={{ px: 3, py: 1.5, display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-            <Button 
-              size="small" 
-              variant="contained"
-              disableElevation
-              color="primary"
-              onClick={() => setIsFilterOpen(true)}
-              startIcon={<ListFilter size={16} />}
-              sx={{ mr: 2, borderRadius: 2 }}
-            >
-              Filters
-            </Button>
-            
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', mr: 1, fontWeight: 600 }}>
-              {activeFilter || query ? 'Applied Filters:' : 'Quick Filters:'}
-            </Typography>
-            
-            {query && (
-              <Chip 
-                label={`Search: ${query}`} 
-                onDelete={() => updateUrlParams({ q: null })}
-                color="primary"
-                size="small"
-                sx={{ borderRadius: 1 }}
-              />
-            )}
-
-            {QUICK_FILTERS.map(qf => {
-              // If we are filtering, only show the active quick filter chip (as a removable chip)
-              if (activeFilter && activeFilter !== qf.id) return null;
+            {/* Filter Controls (Row 1) */}
+            <Box sx={{ px: 3, pt: 2, pb: (query || activeFilter) ? 1 : 2, display: 'flex', gap: 2, alignItems: 'center', flexShrink: 0, bgcolor: 'background.paper', borderBottom: (query || activeFilter) ? 0 : 1, borderColor: 'divider' }}>
               
-              return (
-                <Chip 
-                  key={qf.id} 
-                  label={qf.label} 
-                  icon={<qf.icon size={12} />} 
-                  variant={activeFilter === qf.id ? "filled" : "outlined"}
-                  color={activeFilter === qf.id ? "primary" : "default"}
-                  size="small" 
-                  onClick={!activeFilter ? () => updateUrlParams({ filter: qf.id }) : undefined}
-                  onDelete={activeFilter === qf.id ? () => updateUrlParams({ filter: null }) : undefined}
-                  sx={{ borderRadius: 1 }}
-                />
-              );
-            })}
+              <Autocomplete
+                id="global-trace-search"
+                freeSolo
+                options={searchValue ? [] : SUGGESTIONS}
+                groupBy={(option) => option.group}
+                getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
+                value={searchValue}
+                onChange={(e, newValue) => {
+                  if (typeof newValue === 'string') {
+                    if (newValue.endsWith(':')) {
+                      setSearchValue(newValue);
+                    } else {
+                      updateUrlParams({ q: newValue });
+                      setSearchValue(''); // clear upon saving
+                    }
+                  } else if (newValue) {
+                    setSearchValue(newValue.label);
+                  } else {
+                    updateUrlParams({ q: '' });
+                    setSearchValue('');
+                  }
+                }}
+                onInputChange={(e, newInputValue) => setSearchValue(newInputValue)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchValue) {
+                    updateUrlParams({ q: searchValue });
+                    setSearchValue(''); // Clear it to look like GCP
+                    e.preventDefault();
+                  }
+                }}
+                renderOption={(props, option) => {
+                  const Icon = option.icon;
+                  return (
+                    <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, fontSize: '13px' }}>
+                      <Icon size={14} color="currentColor" style={{ opacity: 0.6 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>{option.label}</Typography>
+                    </Box>
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder="Search traces, users, models..."
+                    variant="outlined"
+                    size="small"
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <Search size={16} style={{ opacity: 0.6, marginLeft: 4, marginRight: 4 }} />
+                          {params.InputProps?.startAdornment}
+                        </>
+                      ),
+                      endAdornment: (
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          {(query || activeFilter) && (
+                             <Typography 
+                               variant="caption" 
+                               sx={{ cursor: 'pointer', color: 'text.secondary', fontWeight: 600, mr: 1, '&:hover': { color: 'primary.main' } }}
+                               onClick={(e) => { 
+                                 e.stopPropagation(); 
+                                 updateUrlParams({ q: null, filter: null }); 
+                                 setSearchValue(''); 
+                               }}
+                             >
+                               Clear filters
+                             </Typography>
+                          )}
+                          {params.InputProps?.endAdornment}
+                        </Box>
+                      ),  
+                      sx: { 
+                        ...params.InputProps?.sx,
+                        fontSize: '13px', 
+                        bgcolor: 'background.default',
+                        height: 36,
+                        p: '0 8px !important',
+                        borderRadius: 2
+                      }
+                    }}
+                    sx={{ 
+                      flex: 1,
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': { borderColor: 'divider' },
+                        '&:hover fieldset': { borderColor: 'text.disabled' },
+                        '&.Mui-focused fieldset': { borderColor: 'primary.main' }
+                      }
+                    }}
+                  />
+                )}
+                sx={{ flex: 1 }} // Take up remaining middle space
+              />
 
-            <Box sx={{ flexGrow: 1 }} />
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', borderLeft: 1, borderColor: 'divider', pl: 2 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, mr: 1 }}>
+                  Quick Filters
+                </Typography>
+                {QUICK_FILTERS.map(qf => (
+                  <Chip 
+                    key={qf.id} 
+                    label={qf.label} 
+                    icon={<qf.icon size={12} />} 
+                    variant={activeFilter === qf.id ? "filled" : "outlined"}
+                    color={activeFilter === qf.id ? "primary" : "default"}
+                    size="small" 
+                    onClick={() => updateUrlParams({ filter: activeFilter === qf.id ? null : qf.id })}
+                    sx={{ borderRadius: 1 }}
+                  />
+                ))}
+              </Box>
 
-            {(query || activeFilter) && (
-              <Button size="small" color="secondary" sx={{ fontSize: '11px', mr: 1 }} onClick={() => updateUrlParams({ q: null, filter: null })}>
-                Clear All
+              <Button 
+                size="small" 
+                variant="outlined"
+                color="inherit"
+                onClick={() => setIsFilterOpen(true)}
+                startIcon={<ListFilter size={16} />}
+                sx={{ borderRadius: 1, ml: 1, bgcolor: 'background.default' }}
+              >
+                Filters {activeFilter ? activeFilter.split(',').length : ''}
               </Button>
+
+              <Button 
+                size="small" 
+                variant="outlined" 
+                color="inherit" 
+                sx={{ bgcolor: 'background.default', minWidth: 36, px: 0, borderRadius: 1 }}
+                onClick={(e) => setColumnAnchorEl(e.currentTarget)}
+              >
+                <Columns size={16} />
+              </Button>
+            </Box>
+
+            {/* Active Filters (Row 2 - Only renders if there's active state) */}
+            {(query || activeFilter) && (
+              <Box sx={{ px: 3, pb: 2, display: 'flex', gap: 1, alignItems: 'center', flexShrink: 0, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+                {query && (
+                  <Chip 
+                    label={
+                      query.includes(':') 
+                        ? <span><b>{query.split(':')[0]}:</b> {query.split(':')[1]}</span>
+                        : `Search: ${query}`
+                    }
+                    onDelete={() => updateUrlParams({ q: null })}
+                    color="default"
+                    variant="outlined"
+                    size="small"
+                    sx={{ borderRadius: 4, bgcolor: 'background.default' }}
+                  />
+                )}
+
+                {activeFilter && activeFilter.split(',').map(filterToken => {
+                  const qf = QUICK_FILTERS.find(q => q.id === filterToken);
+                  
+                  // Quick filters styling (solid tinted to differentiate from outline search)
+                  if (qf) {
+                    return (
+                      <Chip 
+                        key={filterToken}
+                        icon={React.createElement(qf.icon, { size: 12 })}
+                        label={<span><b>{qf.category}:</b> {qf.label}</span>} 
+                        onDelete={() => {
+                          const newFilters = activeFilter.split(',').filter(f => f !== filterToken).join(',') || null;
+                          updateUrlParams({ filter: newFilters });
+                        }}
+                        color="primary"
+                        size="small"
+                        sx={{ borderRadius: 1, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.15)' : '#e0e7ff', color: (theme) => theme.palette.mode === 'dark' ? '#818cf8' : '#3730a3', '& .MuiChip-deleteIcon': { color: (theme) => theme.palette.mode === 'dark' ? '#818cf8' : '#4f46e5' } }}
+                      />
+                    );
+                  }
+
+                  // Sidebar Custom Filters rendering (with blue tint and Filter icon)
+                  if (filterToken.includes(':')) {
+                    const colonIndex = filterToken.indexOf(':');
+                    const k = filterToken.substring(0, colonIndex);
+                    const v = filterToken.substring(colonIndex + 1);
+                    return (
+                      <Chip 
+                        key={filterToken}
+                        icon={<Filter size={12} />}
+                        label={<span><b>{k}:</b> {v}</span>} 
+                        onDelete={() => {
+                          const newFilters = activeFilter.split(',').filter(f => f !== filterToken).join(',') || null;
+                          updateUrlParams({ filter: newFilters });
+                        }}
+                        color="primary"
+                        size="small"
+                        sx={{ borderRadius: 1, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.15)' : '#e0e7ff', color: (theme) => theme.palette.mode === 'dark' ? '#818cf8' : '#3730a3', '& .MuiChip-deleteIcon': { color: (theme) => theme.palette.mode === 'dark' ? '#818cf8' : '#4f46e5' } }}
+                      />
+                    );
+                  }
+
+                  return (
+                      <Chip 
+                        key={filterToken}
+                        icon={<Filter size={12} />}
+                        label={filterToken} 
+                        onDelete={() => {
+                          const newFilters = activeFilter.split(',').filter(f => f !== filterToken).join(',') || null;
+                          updateUrlParams({ filter: newFilters });
+                        }}
+                        color="primary"
+                        size="small"
+                        sx={{ borderRadius: 1, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.15)' : '#e0e7ff', color: (theme) => theme.palette.mode === 'dark' ? '#818cf8' : '#3730a3', '& .MuiChip-deleteIcon': { color: (theme) => theme.palette.mode === 'dark' ? '#818cf8' : '#4f46e5' } }}
+                      />
+                  );
+                })}
+                
+                <Button size="small" color="primary" sx={{ fontSize: '13px', textTransform: 'none', fontWeight: 600, ml: 1 }} onClick={() => setIsFilterOpen(true)}>
+                  + Add filter
+                </Button>
+
+                <Box sx={{ flexGrow: 1 }} />
+
+                <Button size="small" color="secondary" sx={{ fontSize: '12px', textTransform: 'none' }} onClick={() => updateUrlParams({ q: null, filter: null })}>
+                  Clear All
+                </Button>
+              </Box>
             )}
 
-            <Button 
-              size="small" 
-              variant="outlined" 
-              color="inherit" 
-              startIcon={<Columns size={14} />} 
-              sx={{ bgcolor: 'background.default' }}
-              onClick={(e) => setColumnAnchorEl(e.currentTarget)}
-            >
-              Columns
-            </Button>
+            {/* Menu lives outside the Flex rows but inside the component */}
             
             <Menu
               anchorEl={columnAnchorEl}
@@ -225,7 +376,6 @@ export default function TraceExplorer({ traces, savedViews, onRefresh, onSelect,
                 </MenuItem>
               ))}
             </Menu>
-          </Box>
 
           {/* Table Container */}
           <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
@@ -253,10 +403,10 @@ export default function TraceExplorer({ traces, savedViews, onRefresh, onSelect,
         >
           <AGFilterPanel 
             width="100%" 
+            activeFilters={activeFilter}
             onClose={() => setIsFilterOpen(false)} 
-            onApply={() => {
-              // Simulate applying a complex filter from the panel
-              updateUrlParams({ filter: 'complex' });
+            onApply={(filterString) => {
+              updateUrlParams({ filter: filterString !== undefined && filterString !== '' ? filterString : null });
               setIsFilterOpen(false);
             }} 
           />

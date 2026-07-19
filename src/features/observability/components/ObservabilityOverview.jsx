@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Box, Typography, Button, Paper, Toolbar, IconButton, Stack,
-  Chip, Skeleton, Breadcrumbs, Link
+  Box, Typography, Button, Paper, IconButton, Stack,
+  Skeleton, Breadcrumbs, Link, Menu, MenuItem
 } from '@mui/material';
 import { 
-  Calendar, RefreshCw, Filter, Download, Activity, Timer, 
-  Users, TerminalSquare, HeartPulse, DollarSign,
-  Cpu, BookOpen, AlertCircle, History, AlertOctagon, TrendingUp
+  Calendar, RefreshCw, Activity, TerminalSquare, 
+  Cpu, BookOpen, AlertCircle, History, TrendingUp
 } from 'lucide-react';
+import PageHeader from '../../../components/PageHeader';
 import AGTimelineChart from '../../../components/ui/AGTimelineChart';
 import AGRankedTable from '../../../components/ui/AGRankedTable';
 import AGAlertCard from '../../../components/ui/AGAlertCard';
@@ -56,6 +56,15 @@ const StatCard = ({ title, value, subtext, color }) => (
 );
 
 export default function ObservabilityOverview({ overview, onOpenExplorer, onSelectTrace, onBookmark }) {
+  const [timeFilterAnchor, setTimeFilterAnchor] = useState(null);
+  const [timeRange, setTimeRange] = useState('Past 24 hours');
+
+  const handleTimeClick = (event) => setTimeFilterAnchor(event.currentTarget);
+  const handleTimeClose = (range) => {
+    setTimeFilterAnchor(null);
+    if (typeof range === 'string') setTimeRange(range);
+  };
+
   const navigateTo = (path) => {
     if (path === 'explorer') onOpenExplorer();
   };
@@ -84,49 +93,32 @@ export default function ObservabilityOverview({ overview, onOpenExplorer, onSele
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 64px)', overflow: 'hidden', margin: '-30px -36px -40px' }}>
       
-      {/* SubHeader (Fixed) */}
-      <Toolbar 
-        variant="dense" 
-        sx={{ 
-          px: 4.5, 
-          py: 2, 
-          borderBottom: 1, 
-          borderColor: 'divider', 
-          flexShrink: 0,
-          display: 'flex',
-          justifyContent: 'space-between',
-          bgcolor: 'background.paper'
-        }}
-      >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-          <Breadcrumbs aria-label="breadcrumb" sx={{ '& .MuiBreadcrumbs-separator': { mx: 0.5 } }}>
-            <Link underline="hover" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 500 }} href="#">
-              Workspace
-            </Link>
-            <Link underline="hover" color="primary" sx={{ fontSize: '0.75rem', fontWeight: 500 }} href="#">
-              Observability
-            </Link>
-            <Typography color="text.primary" sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-              Overview
-            </Typography>
-          </Breadcrumbs>
-          <Typography variant="h6" fontWeight={600} fontFamily="serif" sx={{ lineHeight: 1.2 }}>
-            Observability Overview
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.2 }}>
-            Real-time insights into your LLM application usage and performance.
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Button variant="outlined" color="inherit" size="small" endIcon={<Calendar size={14} />}>
-            Past 24 hours
-          </Button>
-          <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}><RefreshCw size={16} /></IconButton>
-        </Stack>
-      </Toolbar>
+      <PageHeader 
+        breadcrumbs={['Workspace', 'Observability', 'Overview']}
+        title="Observability Overview"
+        description="Real-time insights into your LLM application usage and performance."
+        actions={
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Button variant="outlined" color="inherit" size="small" onClick={handleTimeClick} startIcon={<Calendar size={14} />}>
+              {timeRange}
+            </Button>
+            <Menu
+              anchorEl={timeFilterAnchor}
+              open={Boolean(timeFilterAnchor)}
+              onClose={handleTimeClose}
+            >
+              <MenuItem onClick={() => handleTimeClose('Past 1 hour')}>Past 1 hour</MenuItem>
+              <MenuItem onClick={() => handleTimeClose('Past 24 hours')}>Past 24 hours</MenuItem>
+              <MenuItem onClick={() => handleTimeClose('Past 7 days')}>Past 7 days</MenuItem>
+              <MenuItem onClick={() => handleTimeClose('Past 30 days')}>Past 30 days</MenuItem>
+            </Menu>
+            <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}><RefreshCw size={16} /></IconButton>
+          </Stack>
+        }
+      />
 
-      {/* PageContent (Scrollable) */}
-      <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', px: 4.5, py: 3, bgcolor: '#f9fafb' }}>
+      {/* PageContent */}
+      <Box sx={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', pl: 8, pr: 4.5, py: 3, bgcolor: 'background.default' }}>
         
         {!overview ? (
           <Box sx={{ maxWidth: 1600, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -263,3 +255,5 @@ export default function ObservabilityOverview({ overview, onOpenExplorer, onSele
     </Box>
   );
 }
+
+

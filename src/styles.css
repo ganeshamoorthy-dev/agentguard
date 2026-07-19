@@ -130,10 +130,6 @@ button {
     font-weight: 700
 }
 
-.app-shell {
-    padding-top: 64px
-}
-
 .sidebar {
     width: 244px;
     position: fixed;

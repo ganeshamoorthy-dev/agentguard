@@ -28,6 +28,8 @@ export default function TraceTable({ traces, onSelect, onBookmark, visibleColumn
               {visibleColumns.includes('time') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Timestamp</TableCell>}
               {visibleColumns.includes('application') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Application</TableCell>}
               {visibleColumns.includes('name') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Trace Name</TableCell>}
+              {visibleColumns.includes('input') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Input</TableCell>}
+              {visibleColumns.includes('output') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Output</TableCell>}
               {visibleColumns.includes('model') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Model</TableCell>}
               {visibleColumns.includes('latency') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Latency</TableCell>}
               {visibleColumns.includes('status') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Status</TableCell>}
@@ -36,7 +38,7 @@ export default function TraceTable({ traces, onSelect, onBookmark, visibleColumn
               {visibleColumns.includes('security') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Security</TableCell>}
               {visibleColumns.includes('evaluation') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>Evaluation</TableCell>}
               {visibleColumns.includes('user') && <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}>User</TableCell>}
-              <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider', minWidth: 60, p: 0.5, pr: 1 }} align="right">Actions</TableCell>
+              <TableCell sx={{ textTransform: 'uppercase', fontSize: '10px', fontWeight: 600, color: 'text.secondary', borderColor: 'divider', minWidth: 80 }} align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -58,8 +60,18 @@ export default function TraceTable({ traces, onSelect, onBookmark, visibleColumn
                   </TableCell>
                 )}
                 {visibleColumns.includes('name') && (
-                  <TableCell sx={{ borderColor: 'divider', color: 'text.secondary', py: 1.5, minWidth: 200 }}>
+                  <TableCell sx={{ borderColor: 'divider', color: 'text.secondary', py: 1.5, minWidth: 150 }}>
                     <Typography variant="body2" fontWeight={600} color="text.primary">{trace.name}</Typography>
+                  </TableCell>
+                )}
+                {visibleColumns.includes('input') && (
+                  <TableCell sx={{ borderColor: 'divider', color: 'text.secondary', py: 1.5, minWidth: 150, maxWidth: 200 }}>
+                    <Typography variant="body2" color="text.secondary" noWrap title={trace.input}>{trace.input}</Typography>
+                  </TableCell>
+                )}
+                {visibleColumns.includes('output') && (
+                  <TableCell sx={{ borderColor: 'divider', color: 'text.secondary', py: 1.5, minWidth: 150, maxWidth: 200 }}>
+                    <Typography variant="body2" color="text.secondary" noWrap title={trace.output}>{trace.output}</Typography>
                   </TableCell>
                 )}
                 {visibleColumns.includes('model') && (
@@ -102,11 +114,11 @@ export default function TraceTable({ traces, onSelect, onBookmark, visibleColumn
                     {trace.user || 'usr_2910'}
                   </TableCell>
                 )}
-                <TableCell sx={{ borderColor: 'divider', color: 'text.secondary', p: 0.5 }} align="right">
+                <TableCell sx={{ borderColor: 'divider', color: 'text.secondary' }} align="right">
                   <Stack direction="row" spacing={0.25} justifyContent="flex-end">
                     <Tooltip title="Delete">
                       <IconButton size="small" onClick={(e) => { e.stopPropagation(); }} color="error" sx={{ p: 0.5 }}>
-                        <Trash2 size={13} />
+                        <Trash2 size={15} />
                       </IconButton>
                     </Tooltip>
                   </Stack>
