@@ -1,1 +1,0 @@
-Purpose: Executive overview with AI health, cost, incidents, recommendations.

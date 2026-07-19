@@ -1,1 +1,0 @@
-Powerful searchable table with filters, bookmarks, saved views and drawer.

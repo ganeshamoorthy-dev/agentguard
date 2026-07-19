@@ -1,1 +1,0 @@
-Cost by model, application, forecast and optimization.

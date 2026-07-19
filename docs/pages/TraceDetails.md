@@ -1,1 +1,0 @@
-Central investigation workspace showing prompt, response, timeline, security, evaluation, metadata and actions.
